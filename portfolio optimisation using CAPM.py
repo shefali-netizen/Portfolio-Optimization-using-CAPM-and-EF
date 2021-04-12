@@ -23,22 +23,34 @@ df = df['Adj Close']
 
 df_SP = pd.DataFrame(data={'SP':df['^GSPC']})
 df.drop(['^GSPC'],axis=1,inplace=True)
-
-print(df.head())
+#df.tail()
+#print(df.tail())
 print(df_SP.head())
 
-rf = 0.01
+# risk factor
+rf = 0.04
 #beta calculation
 b=dict()
-rm = df_SP.mean()
+rm = (df_SP.pct_change().mean())*1250
+print("rm",rm)
 ER = dict()
+df_SP = pd.DataFrame(data={'SP':df_SP['SP'].pct_change()})
+
+df_SP.drop(df_SP.index[0],inplace=True)
+
+print(df_SP)
 for stock in df.columns:
-    slope, intercept, r_value, p_value, std_err = stats.linregress(df_SP['SP'], df[stock])
+    #print(df_SP['SP'].pct_change())
+    stock_df = df[stock].pct_change()
+    stock_df.drop(stock_df.index[0],inplace=True)
+    
+    #print("stock",frame.drop(frame.index[0],inplace=True))
+    slope, intercept, r_value, p_value, std_err = stats.linregress(df_SP['SP'], stock_df)
     b[stock] = slope
     ER[stock] = rf + (b[stock] * (rm-rf))
     ER[stock] = ER[stock]['SP']
 
-
+print(b)
 ER = pd.Series(ER)
 print(ER)
 
@@ -56,7 +68,7 @@ print(ind_er)
 
 
 ann_sd = df.pct_change().apply(lambda x: np.log(1+x)).std().apply(lambda x: x*np.sqrt(250))
-
+ 
 #print(ann_sd)
 
 assets = pd.concat([ER , ann_sd], axis=1) # Creating a table for visualising returns and volatility of assets
@@ -101,15 +113,18 @@ print(portfolios.head()) # Dataframe of the 10000 portfolios created
 min_vol_port = portfolios.iloc[portfolios['Volatility'].idxmin()]
 
 
-rf = 0.01 # risk factor
+
 optimal_risky_port = portfolios.iloc[((portfolios['Returns']-rf)/portfolios['Volatility']).idxmax()]
 #optimal_risky_port
 
 plt.subplots(figsize=(10, 10))
 plt.scatter(portfolios['Volatility'], portfolios['Returns'],marker='o', s=10, alpha=0.3)
 
-plt.scatter(min_vol_port[1], min_vol_port[0], color='r', marker='*', s=500)
-plt.scatter(optimal_risky_port[1], optimal_risky_port[0], color='g', marker='*', s=500)
+plt.scatter(min_vol_port[1], min_vol_port[0], color='r', marker='*', s=500,label="Minimum risk portfolio")
+plt.scatter(optimal_risky_port[1], optimal_risky_port[0], color='g', marker='*', s=500,label='Optimal Portfolio')
+plt.xlabel('Volatility',size=15)
+plt.ylabel('Total Portfolio return Rp',size=15)
+plt.legend(loc ="upper left")
   
 
 
